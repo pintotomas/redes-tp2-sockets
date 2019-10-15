@@ -1,6 +1,7 @@
 import argparse
 import socket
 import time
+import json 
 
 def get_timestamp():
   return int(round(time.time()*1000))
@@ -14,6 +15,7 @@ def start_server(server_address, storage_dir):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   sock.bind(server_address)
+  sock.settimeout(4)
 
   while True:
     data, addr = sock.recvfrom(CHUNK_SIZE)
@@ -35,8 +37,13 @@ def start_server(server_address, storage_dir):
       #No estoy seguro el tema del orden en que esto esta recibiendo los datos
 
       data, addr = sock.recvfrom(CHUNK_SIZE)
-      bytes_received += len(data)
-      f.write(data)
+
+      data = json.loads(data.decode())
+      chunk_number = data.get("chunk_number")
+      chunk = data.get("chunk").encode()
+
+      bytes_received += len(chunk)
+      f.write(chunk)
 
     print("Received file {}".format(filename))
 

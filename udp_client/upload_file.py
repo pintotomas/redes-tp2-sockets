@@ -1,6 +1,7 @@
 import os
 import argparse
 import socket
+import json
 
 CHUNK_SIZE = 1024
 
@@ -26,11 +27,19 @@ def upload_file(server_address, src, name):
     print("There was an error on the server")
     return exit(1)
 
+  #contador para que el server sepa que chunks va recibiendo
+  chunk_number = 0
+
   while True:
     chunk = f.read(CHUNK_SIZE)
+
     if not chunk:
       break
-    sock.sendto(chunk, server_address)
+    data = {"chunk_number": chunk_number,
+            "chunk": chunk.decode('utf-8')}
+
+    sock.sendto(json.dumps(data).encode(), server_address)
+    chunk_number += 1
 
   # Recv amount of data received by the server
   
