@@ -3,7 +3,9 @@ import argparse
 import socket
 import json
 
-CHUNK_SIZE = 1990 #32 bytes para otras cosas #6 bytes para el numero de chunk
+DOWNLOAD = 2
+UPLOAD = 1
+CHUNK_SIZE = 2001 #32 bytes para otras cosas #6 bytes para el numero de chunk
 
 def upload_file(server_address, src, name):
 
@@ -35,9 +37,9 @@ def upload_file(server_address, src, name):
 
     if not chunk:
       break
-    data = {"chunk_number": chunk_number,
-            "chunk": chunk.decode('utf-8'),
-            "OP": "upload_chunk"}
+    data = { "chunk_number": chunk_number,
+             "chunk": chunk.decode('utf-8'),
+             "operation": UPLOAD }
     sock.sendto(json.dumps(data).encode(), server_address)
     chunk_number += 1
     #chunks_sent += 1
