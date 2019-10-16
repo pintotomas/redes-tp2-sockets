@@ -29,7 +29,7 @@ def upload_file(server_address, src, name):
 
   #contador para que el server sepa que chunks va recibiendo
   chunk_number = 0
-  
+  #chunks_sent = 0
   while True:
     chunk = f.read(CHUNK_SIZE)
 
