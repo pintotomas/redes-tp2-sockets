@@ -45,13 +45,11 @@ def start_server(server_address, storage_dir):
           bytes_received += len(chunk)
           
       except timeout:
-        cantidad_chunks_escritos = 0
         for actual_chunk_number in range(total_chunks):
 
           actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
           if actual_chunk != -1:
-            f.write(chunk)
-            cantidad_chunks_escritos += 1
+            continue
           else:
             received_missing_data = False
             timeouts = 0
@@ -60,18 +58,23 @@ def start_server(server_address, storage_dir):
                 data = {"get_chunk": actual_chunk_number}
                 sock.sendto(json.dumps(data).encode(), addr)
                 data, addr = sock.recvfrom(CHUNK_SIZE)
-                received_missing_data = True
+                data = json.loads(data.decode())
+                chunk_number = data.get("chunk_number")
+                chunk = data.get("chunk").encode()
+                if chunk_number == actual_chunk_number:
+                  udp_buffer.add_chunk(chunk_number, chunk)
+                  received_missing_data = True
+
               except timeout:
                 timeouts += 1
-                print("Timeouts: "+str(timeouts))
-                pass
+
             data = json.loads(data.decode())
             chunk = data.get("chunk").encode()
             bytes_received += len(chunk)
 
-            f.write(chunk)
-            cantidad_chunks_escritos += 1
-        print("Cantidad chunks escritos:" + str(cantidad_chunks_escritos))
+    for actual_chunk_number in range(total_chunks):
+      actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
+      f.write(actual_chunk)
 
     print("Received file {}".format(filename))
 
