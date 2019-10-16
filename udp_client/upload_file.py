@@ -3,7 +3,7 @@ import argparse
 import socket
 import json
 
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 2010 #32 bytes para otras cosas #6 bytes para el numero de chunk
 
 def upload_file(server_address, src, name):
 
@@ -29,7 +29,7 @@ def upload_file(server_address, src, name):
 
   #contador para que el server sepa que chunks va recibiendo
   chunk_number = 0
-
+  chunks_sent = 0
   while True:
     chunk = f.read(CHUNK_SIZE)
 
@@ -37,10 +37,11 @@ def upload_file(server_address, src, name):
       break
     data = {"chunk_number": chunk_number,
             "chunk": chunk.decode('utf-8')}
-
     sock.sendto(json.dumps(data).encode(), server_address)
     chunk_number += 1
+    #chunks_sent += 1
 
+  #print("Chunks sent: "+str(chunks_sent))
   # Recv amount of data received by the server
   
   num_bytes, addr = sock.recvfrom(CHUNK_SIZE)
