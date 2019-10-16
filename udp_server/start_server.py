@@ -68,8 +68,6 @@ def start_server(server_address, storage_dir):
               except timeout:
                 timeouts += 1
 
-            data = json.loads(data.decode())
-            chunk = data.get("chunk").encode()
             bytes_received += len(chunk)
 
     for actual_chunk_number in range(total_chunks):
