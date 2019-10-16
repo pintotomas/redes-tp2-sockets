@@ -47,7 +47,7 @@ def start_server(server_address, storage_dir):
 
 
 
-      #f.write(chunk)
+      f.write(chunk)
 
     print("Received file {}".format(filename))
 
