@@ -1,5 +1,5 @@
 import argparse
-import socket
+from socket import *
 import time
 import json 
 from .udp_buffer import UdpBuffer
@@ -17,38 +17,67 @@ def start_server(server_address, storage_dir):
   #TO DO: Deberia haber un buffer por cliente
   udp_buffer = UdpBuffer() 
 
-  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(server_address)
   sock.settimeout(4)
 
   while True:
     data, addr = sock.recvfrom(CHUNK_SIZE)
-    size = int(data.decode())
-    print("Incoming file with size {} from {}".format(size, addr))
+    #size = int(data.decode())
+    data = json.loads(data.decode())
+    size = int(data["size"])
+    total_chunks = int(data["total_chunks"])
+    print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
 
     filename = "./file-{}.bin".format(get_timestamp())
     f = open(filename, "wb")
     bytes_received = 0
 
     sock.sendto(b'start', addr)
-    chunks_received = 0
-    while bytes_received < size:
-      data, addr = sock.recvfrom(CHUNK_SIZE)
 
-      data = json.loads(data.decode())
-      chunk_number = data.get("chunk_number")
-      chunk = data.get("chunk").encode()
-      
-      udp_buffer.add_chunk(chunk_number, chunk)
-      bytes_received += len(chunk)
-      #chunks_received += 1
-      #print("Chunks received: "+str(chunks_received))
-      f.write(chunk)
+    while bytes_received < size:
+      try:
+          data, addr = sock.recvfrom(CHUNK_SIZE)
+          data = json.loads(data.decode())
+          chunk_number = data.get("chunk_number")
+          chunk = data.get("chunk").encode()
+          udp_buffer.add_chunk(chunk_number, chunk)
+          bytes_received += len(chunk)
+          
+      except timeout:
+        cantidad_chunks_escritos = 0
+        for actual_chunk_number in range(total_chunks):
+
+          actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
+          if actual_chunk != -1:
+            f.write(chunk)
+            cantidad_chunks_escritos += 1
+          else:
+            received_missing_data = False
+            timeouts = 0
+            while not(received_missing_data):
+              try:
+                data = {"get_chunk": actual_chunk_number}
+                sock.sendto(json.dumps(data).encode(), addr)
+                data, addr = sock.recvfrom(CHUNK_SIZE)
+                received_missing_data = True
+              except timeout:
+                timeouts += 1
+                print("Timeouts: "+str(timeouts))
+                pass
+            data = json.loads(data.decode())
+            chunk = data.get("chunk").encode()
+            bytes_received += len(chunk)
+
+            f.write(chunk)
+            cantidad_chunks_escritos += 1
+        print("Cantidad chunks escritos:" + str(cantidad_chunks_escritos))
 
     print("Received file {}".format(filename))
 
     # Send number of bytes received
-    sock.sendto(str(bytes_received).encode(),addr)
+    data = {"bytes_received": bytes_received}
+    sock.sendto(json.dumps(data).encode(),addr)
 
     f.close()
 

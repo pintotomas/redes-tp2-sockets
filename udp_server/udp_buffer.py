@@ -10,7 +10,7 @@ class UdpBuffer:
 
 	def get_chunk(self, chunk_number):
 		"""Obtiene el chunk numero 'chunk_number'"""
-		return self.chunks[chunk_number]
+		return self.chunks.get(chunk_number, -1)
 
 	def size(self):
 		"""Devuelve la cantidad de chunks en el buffer"""
