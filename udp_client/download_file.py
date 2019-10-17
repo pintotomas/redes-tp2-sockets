@@ -53,7 +53,7 @@ def download_file(server_address, name, dst):
       except timeout:
           #Caso MUY extraño: A veces me pasa que no se escribe bien la cantidad de bytes recibidos en bytes_received
           #Pero se guardaron en el buffer
-           if udp_buffer.size() == total_chunks:
+        if udp_buffer.size() == total_chunks:
           break
         for actual_chunk_number in range(total_chunks):
 
@@ -65,7 +65,7 @@ def download_file(server_address, name, dst):
             received_missing_data = False
             timeouts = 0
             while not(received_missing_data):
-               try:
+              try:
                 data = {"get_chunk": actual_chunk_number}
                 sock.sendto(pickle.dumps(data), server_address)
                 data, addr = sock.recvfrom(CHUNK_SIZE)
