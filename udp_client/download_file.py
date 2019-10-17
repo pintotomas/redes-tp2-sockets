@@ -28,13 +28,15 @@ def download_file(server_address, name, dst):
   	except timeout:
   		#Vuelvo a enviar la solicitud del archivo que busco
   		sock.sendto(pickle.dumps(requested_file_data), server_address)
+
   data = pickle.loads(data)
   if data["signal"] == "start":
-  	udp_buffer = UdpBuffer()
-  	print(udp_buffer)
-  	
+    udp_buffer = UdpBuffer()
+    data, addr = sock.recvfrom(CHUNK_SIZE)
+    data = pickle.loads(data)
+    print("Receiving {} bytes in {} chunks".format(data["size"], data["total_chunks"]))
+
   elif data["signal"] == "file_not_found":
-  	print("File not found!")
   	return
   #Aca se queda infinitamente esperando una respuesta del server
 
