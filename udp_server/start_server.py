@@ -119,7 +119,7 @@ def start_server(server_address, storage_dir):
       f = open(file_path, "rb")
       f.seek(0, os.SEEK_END)
       size = f.tell()
-      total_chunks = math.ceil(size/CHUNK_SIZE)
+      total_chunks = math.ceil(size/TRANSFER_CHUNK_SIZE)
       f.seek(0, os.SEEK_SET)
       print("Sending {} bytes in {} chunks".format(size, total_chunks))
       data = {"size": size,
@@ -137,7 +137,26 @@ def start_server(server_address, storage_dir):
         data = { "chunk_no": chunk_number, "chunk": chunk }
         sock.sendto(pickle.dumps(data), addr)
         chunk_number += 1
-        
+
+      client_received_file = False
+      sock.settimeout(None)
+      while not(client_received_file):
+        data, addr = sock.recvfrom(CHUNK_SIZE)
+        data = pickle.loads(data)
+        if "get_chunk" in data:
+          chunk_number = data["get_chunk"]
+          file_position = (chunk_number-1)*TRANSFER_CHUNK_SIZE
+          f.seek(file_position)
+          chunk = f.read(TRANSFER_CHUNK_SIZE)
+          data = { "chunk_no": chunk_number,
+                 "chunk": chunk,
+                 "OP": UPLOAD }
+          sock.sendto(pickle.dumps(data), addr)
+        elif "bytes_received" in data:
+          num_bytes = data["bytes_received"]
+          print("Client received {} bytes".format(num_bytes))
+          client_received_file = True
+
 
   sock.close()
 

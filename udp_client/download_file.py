@@ -1,9 +1,10 @@
 from socket import *
 import pickle
 from .udp_buffer import UdpBuffer
+
 DOWNLOAD = 2
 UPLOAD = 1
-CHUNK_SIZE = 1980 #32 bytes para otras cosas #6 bytes para el numero de chunk
+CHUNK_SIZE = 2048 #32 bytes para otras cosas #6 bytes para el numero de chunk
 
 def download_file(server_address, name, dst):
   # TODO: Implementar UDP download_file client
@@ -39,6 +40,7 @@ def download_file(server_address, name, dst):
     total_chunks = data["total_chunks"]
     print("Receiving {} bytes in {} chunks".format(size, total_chunks))
     bytes_received = 0
+    sock.settimeout(3)
     while bytes_received < size:
       try:
         data, addr = sock.recvfrom(CHUNK_SIZE)
@@ -49,15 +51,44 @@ def download_file(server_address, name, dst):
         bytes_received += len(chunk)
 
       except timeout:
-        print("timeout :(")
-        print("bytes_received")
+          #Caso MUY extraño: A veces me pasa que no se escribe bien la cantidad de bytes recibidos en bytes_received
+          #Pero se guardaron en el buffer
+           if udp_buffer.size() == total_chunks:
+          break
+        for actual_chunk_number in range(total_chunks):
+
+          actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
+          if actual_chunk != -1:
+            continue
+
+          else:
+            received_missing_data = False
+            timeouts = 0
+            while not(received_missing_data):
+               try:
+                data = {"get_chunk": actual_chunk_number}
+                sock.sendto(pickle.dumps(data), server_address)
+                data, addr = sock.recvfrom(CHUNK_SIZE)
+                data = pickle.loads(data)
+                chunk_number = data.get("chunk_no")
+                chunk = data.get("chunk")
+                if chunk_number == actual_chunk_number:
+                  udp_buffer.add_chunk(chunk_number, chunk)
+                  received_missing_data = True
+
+              except timeout:
+                timeouts += 1
+
+            bytes_received += len(chunk)
 
     f = open(dst, 'wb')
     for actual_chunk_number in range(total_chunks):
         actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
         f.write(actual_chunk)
-
+    f.close()
     print("Received file {}".format(dst))
+    data = {"bytes_received": size}
+    sock.sendto(pickle.dumps(data), server_address)
 
   elif data["signal"] == "file_not_found":
     print("File not found!")
