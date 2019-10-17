@@ -34,7 +34,29 @@ def download_file(server_address, name, dst):
     udp_buffer = UdpBuffer()
     data, addr = sock.recvfrom(CHUNK_SIZE)
     data = pickle.loads(data)
-    print("Receiving {} bytes in {} chunks".format(data["size"], data["total_chunks"]))
+    size = data["size"]
+    total_chunks = data["total_chunks"]
+    print("Receiving {} bytes in {} chunks".format(size, total_chunks))
+    bytes_received = 0
+    while bytes_received < size:
+      try:
+        data, addr = sock.recvfrom(CHUNK_SIZE)
+        data = pickle.loads(data)
+        chunk_number = data.get("chunk_no")
+        chunk = data.get("chunk")
+        udp_buffer.add_chunk(chunk_number, chunk)
+        bytes_received += len(chunk)
+
+      except timeout:
+        print("timeout :(")
+        print("bytes_received")
+
+    f = open(dst, 'wb')
+    for actual_chunk_number in range(total_chunks):
+        actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
+        f.write(actual_chunk)
+
+    print("Received file {}".format(dst))
 
   elif data["signal"] == "file_not_found":
   	return
