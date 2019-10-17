@@ -1,6 +1,6 @@
 from socket import *
 import pickle
-
+from .udp_buffer import UdpBuffer
 DOWNLOAD = 2
 UPLOAD = 1
 CHUNK_SIZE = 1980 #32 bytes para otras cosas #6 bytes para el numero de chunk
@@ -30,7 +30,9 @@ def download_file(server_address, name, dst):
   		sock.sendto(pickle.dumps(requested_file_data), server_address)
   data = pickle.loads(data)
   if data["signal"] == "start":
-  	#iniciar descarga
+  	udp_buffer = UdpBuffer()
+  	print(udp_buffer)
+  	
   elif data["signal"] == "file_not_found":
   	print("File not found!")
   	return

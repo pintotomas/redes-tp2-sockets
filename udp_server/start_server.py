@@ -4,11 +4,13 @@ import time
 import pickle
 from .udp_buffer import UdpBuffer
 import os
+import math
 
 def get_timestamp():
   return int(round(time.time()*1000))
 
 CHUNK_SIZE = 2048
+TRANSFER_CHUNK_SIZE = 1980
 DOWNLOAD = 2
 UPLOAD = 1
 
@@ -106,9 +108,11 @@ def start_server(server_address, storage_dir):
         data["signal"] = "start"
       else:
         data["signal"] = "file_not_found"
-      print(data)
-      print(pickle.dumps(data))
+
       sock.sendto(pickle.dumps(data), addr)
+
+      if data["signal"] == "file_not_found":
+        continue
 
   sock.close()
 
