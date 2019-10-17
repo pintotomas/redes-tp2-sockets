@@ -1,7 +1,7 @@
 import argparse
 from socket import *
 import time
-import json 
+import pickle
 from .udp_buffer import UdpBuffer
 
 def get_timestamp():
@@ -23,8 +23,7 @@ def start_server(server_address, storage_dir):
 
   while True:
     data, addr = sock.recvfrom(CHUNK_SIZE)
-    #size = int(data.decode())
-    data = json.loads(data.decode())
+    data = pickle.loads(data)
     size = int(data["size"])
     total_chunks = int(data["total_chunks"])
     print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
@@ -38,9 +37,9 @@ def start_server(server_address, storage_dir):
     while bytes_received < size:
       try:
           data, addr = sock.recvfrom(CHUNK_SIZE)
-          data = json.loads(data.decode())
+          data = pickle.loads(data)
           chunk_number = data.get("chunk_number")
-          chunk = data.get("chunk").encode()
+          chunk = data.get("chunk")
           udp_buffer.add_chunk(chunk_number, chunk)
           bytes_received += len(chunk)
           
@@ -56,11 +55,11 @@ def start_server(server_address, storage_dir):
             while not(received_missing_data):
               try:
                 data = {"get_chunk": actual_chunk_number}
-                sock.sendto(json.dumps(data).encode(), addr)
+                sock.sendto(pickle.dumps(data), addr)
                 data, addr = sock.recvfrom(CHUNK_SIZE)
-                data = json.loads(data.decode())
+                data = pickle.loads(data)
                 chunk_number = data.get("chunk_number")
-                chunk = data.get("chunk").encode()
+                chunk = data.get("chunk")
                 if chunk_number == actual_chunk_number:
                   udp_buffer.add_chunk(chunk_number, chunk)
                   received_missing_data = True
@@ -71,6 +70,7 @@ def start_server(server_address, storage_dir):
             bytes_received += len(chunk)
 
     for actual_chunk_number in range(total_chunks):
+
       actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
       f.write(actual_chunk)
 
@@ -78,7 +78,7 @@ def start_server(server_address, storage_dir):
 
     # Send number of bytes received
     data = {"bytes_received": bytes_received}
-    sock.sendto(json.dumps(data).encode(),addr)
+    sock.sendto(pickle.dumps(data), addr)
 
     f.close()
 
