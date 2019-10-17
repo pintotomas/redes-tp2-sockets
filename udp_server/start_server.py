@@ -116,6 +116,28 @@ def start_server(server_address, storage_dir):
 
       if data["signal"] == "file_not_found":
         continue
+      f = open(file_path, "rb")
+      f.seek(0, os.SEEK_END)
+      size = f.tell()
+      total_chunks = math.ceil(size/CHUNK_SIZE)
+      f.seek(0, os.SEEK_SET)
+      print("Sending {} bytes in {} chunks".format(size, total_chunks))
+      data = {"size": size,
+             "total_chunks": total_chunks}
+
+      sock.sendto(pickle.dumps(data), addr)
+
+      chunk_number = 0
+
+      while True:
+        chunk = f.read(TRANSFER_CHUNK_SIZE)
+
+        if not chunk:
+          break
+        data = { "chunk_no": chunk_number, "chunk": chunk }
+        sock.sendto(pickle.dumps(data), addr)
+        chunk_number += 1
+        
 
   sock.close()
 
