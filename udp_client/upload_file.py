@@ -25,7 +25,8 @@ def upload_file(server_address, src, name):
 
   file_data = {"size": str(size),
               "total_chunks": str(total_chunks),
-              "OP": UPLOAD}
+              "OP": UPLOAD,
+              "name": name}
 
   sock.sendto(pickle.dumps(file_data), server_address)
   signal, addr = sock.recvfrom(CHUNK_SIZE)
@@ -54,7 +55,7 @@ def upload_file(server_address, src, name):
     data = pickle.loads(data)
     if "get_chunk" in data:
       chunk_number = data["get_chunk"]
-      file_position = (chunk_number-1)*CHUNK_SIZE 
+      file_position = (chunk_number-1)*CHUNK_SIZE
       f.seek(file_position)
       chunk = f.read(CHUNK_SIZE)
       data = { "chunk_no": chunk_number,
