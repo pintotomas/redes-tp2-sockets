@@ -24,7 +24,8 @@ def upload_file(server_address, src, name):
   sock.bind(own_address)
 
   file_data = {"size": str(size),
-              "total_chunks": str(total_chunks)}
+              "total_chunks": str(total_chunks),
+              "OP": UPLOAD}
 
   sock.sendto(pickle.dumps(file_data), server_address)
   signal, addr = sock.recvfrom(CHUNK_SIZE)
