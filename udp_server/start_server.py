@@ -23,7 +23,6 @@ def start_server(server_address, storage_dir):
 
   #TO DO: Deberia haber un buffer por cliente
   udp_buffer = UdpBuffer()
-  multiclient = MulticlientHandler()
   sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(server_address)
   sock.settimeout(3)
