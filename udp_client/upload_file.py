@@ -3,6 +3,7 @@ import argparse
 import socket
 import pickle
 import math
+import pathlib
 
 DOWNLOAD = 2
 UPLOAD = 1
@@ -11,8 +12,12 @@ CHUNK_SIZE = 1980 #32 bytes para otras cosas #6 bytes para el numero de chunk
 def upload_file(server_address, src, name):
 
   own_address = ("127.0.0.1", 8081)
-
-  f = open(src, "rb")
+  try:
+    f = open(src, "rb")
+  except FileNotFoundError:
+    print('There was an error opening the file!')
+    return
+      
   f.seek(0, os.SEEK_END)
   size = f.tell()
   total_chunks = math.ceil(size/CHUNK_SIZE)
