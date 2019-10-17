@@ -27,13 +27,14 @@ def start_server(server_address, storage_dir):
       data, addr = sock.recvfrom(CHUNK_SIZE)
       data = pickle.loads(data)
       operation_code = int(data["OP"])
-      sock.sendto(b'start', addr)
+      
     except timeout:
       #revivo al server
       sock.settimeout(3)
       continue
     if (operation_code == UPLOAD):
       #ACA CADA VEZ QUE RECIBA DATA, CHEQUEAR QUE EL CODIGO SEA UPLOAD, Y SI NO ES, DESCARTARLO
+      sock.sendto(b'start', addr)
       size = int(data["size"])
       total_chunks = int(data["total_chunks"])
       print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
@@ -94,6 +95,9 @@ def start_server(server_address, storage_dir):
       sock.sendto(pickle.dumps(data), addr)
 
       f.close()
+
+    elif (operation_code == DOWNLOAD):
+      pass
 
   sock.close()
 
