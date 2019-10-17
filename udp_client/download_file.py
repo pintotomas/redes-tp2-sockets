@@ -23,11 +23,16 @@ def download_file(server_address, name, dst):
   sock.settimeout(20)
   while not(start_signal_obtained):
   	try:
-  		signal, addr = sock.recvfrom(CHUNK_SIZE)
+  		data, addr = sock.recvfrom(CHUNK_SIZE)
   		start_signal_obtained = True
   	except timeout:
   		#Vuelvo a enviar la solicitud del archivo que busco
   		sock.sendto(pickle.dumps(requested_file_data), server_address)
-  
+  data = pickle.loads(data)
+  if data["signal"] == "start":
+  	#iniciar descarga
+  elif data["signal"] == "file_not_found":
+  	print("File not found!")
+  	return
   #Aca se queda infinitamente esperando una respuesta del server
 
