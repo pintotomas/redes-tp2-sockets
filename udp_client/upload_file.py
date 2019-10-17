@@ -41,9 +41,9 @@ def upload_file(server_address, src, name):
 
     if not chunk:
       break
-    data = { "chunk_number": chunk_number,
+    data = { "chunk_no": chunk_number,
              "chunk": chunk, #.decode('utf-8'),
-             "operation": UPLOAD }
+             "OP": UPLOAD }
     sock.sendto(pickle.dumps(data), server_address)#.encode(), server_address)
     chunk_number += 1
 
@@ -56,9 +56,9 @@ def upload_file(server_address, src, name):
       file_position = (chunk_number-1)*CHUNK_SIZE 
       f.seek(file_position)
       chunk = f.read(CHUNK_SIZE)
-      data = { "chunk_number": chunk_number,
+      data = { "chunk_no": chunk_number,
              "chunk": chunk,
-             "operation": UPLOAD }
+             "OP": UPLOAD }
       sock.sendto(pickle.dumps(data), server_address)
     elif "bytes_received" in data:
       num_bytes = data["bytes_received"]

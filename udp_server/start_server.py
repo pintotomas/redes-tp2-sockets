@@ -19,7 +19,7 @@ def start_server(server_address, storage_dir):
 
   sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(server_address)
-  sock.settimeout(4)
+  sock.settimeout(3)
 
   while True:
     try:
@@ -36,24 +36,30 @@ def start_server(server_address, storage_dir):
       sock.sendto(b'start', addr)
     except timeout:
       #revivo al server
-      sock.settimeout(4)
+      sock.settimeout(3)
       continue
 
     while bytes_received < size:
       try:
           data, addr = sock.recvfrom(CHUNK_SIZE)
           data = pickle.loads(data)
-          chunk_number = data.get("chunk_number")
+          chunk_number = data.get("chunk_no")
           chunk = data.get("chunk")
           udp_buffer.add_chunk(chunk_number, chunk)
           bytes_received += len(chunk)
           
       except timeout:
-        for actual_chunk_number in range(total_chunks):
 
+        #Caso MUY extraño: A veces me pasa que no se escribe bien la cantidad de bytes recibidos en bytes_received
+        #Pero se guardaron en el buffer
+        if udp_buffer.size() == total_chunks:
+          break
+        for actual_chunk_number in range(total_chunks):
+          
           actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
           if actual_chunk != -1:
             continue
+
           else:
             received_missing_data = False
             timeouts = 0
@@ -63,7 +69,7 @@ def start_server(server_address, storage_dir):
                 sock.sendto(pickle.dumps(data), addr)
                 data, addr = sock.recvfrom(CHUNK_SIZE)
                 data = pickle.loads(data)
-                chunk_number = data.get("chunk_number")
+                chunk_number = data.get("chunk_no")
                 chunk = data.get("chunk")
                 if chunk_number == actual_chunk_number:
                   udp_buffer.add_chunk(chunk_number, chunk)
