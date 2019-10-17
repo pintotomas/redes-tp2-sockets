@@ -22,17 +22,22 @@ def start_server(server_address, storage_dir):
   sock.settimeout(4)
 
   while True:
-    data, addr = sock.recvfrom(CHUNK_SIZE)
-    data = pickle.loads(data)
-    size = int(data["size"])
-    total_chunks = int(data["total_chunks"])
-    print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
+    try:
+      data, addr = sock.recvfrom(CHUNK_SIZE)
+      data = pickle.loads(data)
+      size = int(data["size"])
+      total_chunks = int(data["total_chunks"])
+      print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
 
-    filename = "./file-{}.bin".format(get_timestamp())
-    f = open(filename, "wb")
-    bytes_received = 0
+      filename = "./file-{}.bin".format(get_timestamp())
+      f = open(filename, "wb")
+      bytes_received = 0
 
-    sock.sendto(b'start', addr)
+      sock.sendto(b'start', addr)
+    except timeout:
+      #revivo al server
+      sock.settimeout(4)
+      continue
 
     while bytes_received < size:
       try:
