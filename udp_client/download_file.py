@@ -1,6 +1,7 @@
 from socket import *
 import pickle
 from .udp_buffer import UdpBuffer
+
 DOWNLOAD = 2
 UPLOAD = 1
 CHUNK_SIZE = 2048 #32 bytes para otras cosas #6 bytes para el numero de chunk
