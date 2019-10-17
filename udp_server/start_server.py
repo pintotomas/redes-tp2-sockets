@@ -13,8 +13,6 @@ CHUNK_SIZE = 2048
 TRANSFER_CHUNK_SIZE = 1980
 DOWNLOAD = 2
 UPLOAD = 1
-DATA = 0
-ADDRESS = 1
 
 def start_server(server_address, storage_dir):
   #TO DO
@@ -30,12 +28,6 @@ def start_server(server_address, storage_dir):
   while True:
     try:
       data, addr = sock.recvfrom(CHUNK_SIZE)
-      if multiclient.empty():
-        current_socket = [data, addr]
-      else:
-        multiclient.add_socket([data, addr])
-        current_socket = multiclient.current_socket()
-
       data = pickle.loads(data)
       operation_code = int(data["OP"])
 
@@ -45,7 +37,7 @@ def start_server(server_address, storage_dir):
       continue
     if (operation_code == UPLOAD):
       #ACA CADA VEZ QUE RECIBA DATA, CHEQUEAR QUE EL CODIGO SEA UPLOAD, Y SI NO ES, DESCARTARLO
-      sock.sendto(b'start', current_socket[ADDRESS])
+      sock.sendto(b'start', addr)
       size = int(data["size"])
       total_chunks = int(data["total_chunks"])
       name = data["name"]
@@ -59,12 +51,7 @@ def start_server(server_address, storage_dir):
       while bytes_received < size:
         try:
             data, addr = sock.recvfrom(CHUNK_SIZE)
-            if current_socket[ADDRESS] != addr:
-              multiclient.add_socket([data, addr])
-              continue
-            else:
-              current_socket = [data, addr]
-            data = pickle.loads(current_socket[DATA])
+            data = pickle.loads(data)
             chunk_number = data.get("chunk_no")
             chunk = data.get("chunk")
             udp_buffer.add_chunk(chunk_number, chunk)
@@ -90,12 +77,7 @@ def start_server(server_address, storage_dir):
                   data = {"get_chunk": actual_chunk_number}
                   sock.sendto(pickle.dumps(data), addr)
                   data, addr = sock.recvfrom(CHUNK_SIZE)
-                  if current_socket[ADDRESS] != addr:
-                    multiclient.add_socket([data, addr])
-                    continue
-                  else:
-                    current_socket = [data, addr]
-                  data = pickle.loads(current_socket[DATA])
+                  data = pickle.loads(data)
                   chunk_number = data.get("chunk_no")
                   chunk = data.get("chunk")
                   if chunk_number == actual_chunk_number:
