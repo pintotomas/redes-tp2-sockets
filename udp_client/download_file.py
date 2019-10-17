@@ -1,4 +1,4 @@
-import socket
+from socket import *
 import pickle
 
 DOWNLOAD = 2
@@ -10,7 +10,7 @@ def download_file(server_address, name, dst):
   print('UDP: download_file({}, {}, {})'.format(server_address, name, dst))
   own_address = ("127.0.0.1", 8081)
   # Create socket and connect to server
-  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(own_address)
 
   #Enviar tambien informacion del own address
@@ -18,6 +18,16 @@ def download_file(server_address, name, dst):
               "OP": DOWNLOAD}
 
   sock.sendto(pickle.dumps(requested_file_data), server_address)
-  signal, addr = sock.recvfrom(CHUNK_SIZE)
+
+  start_signal_obtained = False
+  sock.settimeout(20)
+  while not(start_signal_obtained):
+  	try:
+  		signal, addr = sock.recvfrom(CHUNK_SIZE)
+  		start_signal_obtained = True
+  	except timeout:
+  		#Vuelvo a enviar la solicitud del archivo que busco
+  		sock.sendto(pickle.dumps(requested_file_data), server_address)
+  
   #Aca se queda infinitamente esperando una respuesta del server
 
