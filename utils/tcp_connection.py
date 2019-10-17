@@ -67,16 +67,20 @@ class TCPConnection:
         packedData = struct.pack(self.PACK_FORMAT, data)
         return self._sendData(packedData)
 
-    def sendString(self, data):
+    def sendString(self, data, encode=False):
+        if encode:
+            data = data.encode()
+
         sent = 0
-        sent += self.sendNumber(len(data.encode()))
-        sent += self._sendData(data.encode())
+        sent += self.sendNumber(len(data))
+        sent += self._sendData(data)
         return sent
 
     def recvNumber(self):
         return struct.unpack(self.PACK_FORMAT,
                              self._recvData(self.RECV_INT_SIZE))[0]
 
-    def recvString(self):
+    def recvString(self, decode=False):
         length = self.recvNumber()
-        return self._recvData(length).decode()
+        data = self._recvData(length)
+        return data.decode() if decode else data

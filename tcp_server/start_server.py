@@ -3,17 +3,17 @@ from utils.op_codes import OP_CODES
 
 
 def _handle_upload(connection, storage_dir):
-    name = connection.recvString()
+    name = connection.recvString(decode=True)
     content = connection.recvString()
 
-    with open('{}/{}'.format(storage_dir, name), 'w') as f:
+    with open('{}/{}'.format(storage_dir, name), 'wb') as f:
         f.write(content)
 
 
 def _handle_download(connection, storage_dir):
-    name = connection.recvString()
+    name = connection.recvString(decode=True)
 
-    with open('{}/{}'.format(storage_dir, name), 'r') as f:
+    with open('{}/{}'.format(storage_dir, name), 'rb') as f:
         content = f.read()
     connection.sendString(content)
 
