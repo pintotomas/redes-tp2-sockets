@@ -9,10 +9,19 @@ CHUNK_SIZE = 2048 #32 bytes para otras cosas #6 bytes para el numero de chunk
 def download_file(server_address, name, dst):
   # TODO: Implementar UDP download_file client
   print('UDP: download_file({}, {}, {})'.format(server_address, name, dst))
-  own_address = ("127.0.0.1", 8081)
   # Create socket and connect to server
   sock = socket(AF_INET, SOCK_DGRAM)
-  sock.bind(own_address)
+  binded = False
+  addresses = ["127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.4", "127.0.0.5"]
+  ip = 0
+  port = 8081
+  while not(binded):
+    try:
+      own_address = (addresses[ip], port)
+      sock.bind(own_address)
+      binded = True
+    except OSError:
+      ip += 1
 
   #Enviar tambien informacion del own address
   requested_file_data = {"name": name,
