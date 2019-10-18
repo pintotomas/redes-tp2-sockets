@@ -86,6 +86,8 @@ def upload_file(server_address, src, name):
       data, addr = sock.recvfrom(CHUNK_SIZE)
       data = pickle.loads(data)
       if "get_chunk" in data:
+        #El server esta vivo, reseteo el contador
+        timeouts = 0
         chunk_number = data["get_chunk"]
         file_position = (chunk_number)*CHUNK_SIZE
         f.seek(file_position)
