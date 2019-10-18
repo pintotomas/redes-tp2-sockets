@@ -16,11 +16,8 @@ UPLOAD = 1
 
 
 def start_server(server_address, storage_dir):
-  #TO DO
-  # - Guardar el archivo correctamente
-  # - Avisar al cliente si no se recibieron todos los datos
-
-  #TO DO: Deberia haber un buffer por cliente
+  if not os.path.exists(storage_dir):
+      os.makedirs(storage_dir)
   udp_buffer = UdpBuffer()
   sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(server_address)
