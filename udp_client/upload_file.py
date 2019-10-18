@@ -58,7 +58,7 @@ def upload_file(server_address, src, name):
   if data["signal"] != "start":
     print("There was an error on the server")
     return exit(1)
-  return
+
   print("Sending {} bytes in {} chunks from {}".format(size, total_chunks, src))
   #contador para que el server sepa que chunks va recibiendo
   chunk_number = 0
@@ -75,22 +75,30 @@ def upload_file(server_address, src, name):
     chunk_number += 1
 
   # Recv amount of data received by the server
+  timeouts = 0
   while True:
-    data, addr = sock.recvfrom(CHUNK_SIZE)
-    data = pickle.loads(data)
-    if "get_chunk" in data:
-      chunk_number = data["get_chunk"]
-      file_position = (chunk_number)*CHUNK_SIZE
-      f.seek(file_position)
-      chunk = f.read(CHUNK_SIZE)
-      data = { "chunk_no": chunk_number,
-             "chunk": chunk,
-             "OP": UPLOAD }
-      sock.sendto(pickle.dumps(data), server_address)
-    elif "bytes_received" in data:
-      num_bytes = data["bytes_received"]
-      print("Server received {} bytes".format(num_bytes))
+    if(timeouts > 10):
+      print("No more responses from server, stopping upload.")
       break
+    try:
+      data, addr = sock.recvfrom(CHUNK_SIZE)
+      data = pickle.loads(data)
+      if "get_chunk" in data:
+        chunk_number = data["get_chunk"]
+        file_position = (chunk_number)*CHUNK_SIZE
+        f.seek(file_position)
+        chunk = f.read(CHUNK_SIZE)
+        data = { "chunk_no": chunk_number,
+               "chunk": chunk,
+               "OP": UPLOAD }
+        sock.sendto(pickle.dumps(data), server_address)
+      elif "bytes_received" in data:
+        num_bytes = data["bytes_received"]
+        print("Server received {} bytes".format(num_bytes))
+        break
+    except socket.timeout:
+      timeouts += 1
+      continue
 
   f.close()
   sock.close()
