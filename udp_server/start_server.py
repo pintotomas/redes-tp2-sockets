@@ -48,10 +48,13 @@ def start_server(server_address, storage_dir):
       print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
 
       filename = "{}/{}".format(storage_dir, name)
-      f = open(filename, "wb")
+      
 
       bytes_received = 0
+      continue_upload = True
       while bytes_received < size:
+        if not(continue_upload):
+          break
         try:
             data, addr = sock.recvfrom(CHUNK_SIZE)
             if (addr != CURRENT_WORKING_ADDRESS):
@@ -70,7 +73,8 @@ def start_server(server_address, storage_dir):
           if udp_buffer.size() == total_chunks:
             break
           for actual_chunk_number in range(total_chunks):
-
+            if not(continue_upload):
+              break
             actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
             if actual_chunk != -1:
               continue
@@ -78,8 +82,16 @@ def start_server(server_address, storage_dir):
             else:
               received_missing_data = False
               timeouts = 0
+
               while not(received_missing_data):
                 try:
+                  if(timeouts > 10):
+                    #10 timeouts son 30 segundos (timeout setteado en 3)
+                    #despues de eso, suponemos que murio el cliente y reseteamos esto
+                    print("Client does not respond, stopping upload..")
+                    CURRENT_WORKING_ADDRESS = None
+                    continue_upload = False
+                    break
                   data = {"get_chunk": actual_chunk_number}
                   sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
                   data, addr = sock.recvfrom(CHUNK_SIZE)
@@ -91,25 +103,27 @@ def start_server(server_address, storage_dir):
                   chunk = data.get("chunk")
                   if chunk_number == actual_chunk_number:
                     udp_buffer.add_chunk(chunk_number, chunk)
+                    bytes_received += len(chunk)
                     received_missing_data = True
 
                 except timeout:
                   timeouts += 1
 
-              bytes_received += len(chunk)
+              
+      if (continue_upload):
+        f = open(filename, "wb")
+        for actual_chunk_number in range(total_chunks):
 
-      for actual_chunk_number in range(total_chunks):
+          actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
+          f.write(actual_chunk)
 
-        actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
-        f.write(actual_chunk)
+        print("Received file {}".format(filename))
 
-      print("Received file {}".format(filename))
-
-      # Send number of bytes received
-      data = {"bytes_received": bytes_received}
-      sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
-      CURRENT_WORKING_ADDRESS = None
-      f.close()
+        # Send number of bytes received
+        data = {"bytes_received": bytes_received}
+        sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
+        CURRENT_WORKING_ADDRESS = None
+        f.close()
       
 
     elif (operation_code == DOWNLOAD):
