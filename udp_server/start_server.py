@@ -145,7 +145,7 @@ def start_server(server_address, storage_dir):
         data = pickle.loads(data)
         if "get_chunk" in data:
           chunk_number = data["get_chunk"]
-          file_position = (chunk_number-1)*TRANSFER_CHUNK_SIZE
+          file_position = (chunk_number)*TRANSFER_CHUNK_SIZE
           f.seek(file_position)
           chunk = f.read(TRANSFER_CHUNK_SIZE)
           data = { "chunk_no": chunk_number,

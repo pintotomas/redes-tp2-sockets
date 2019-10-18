@@ -60,7 +60,7 @@ def upload_file(server_address, src, name):
     data = pickle.loads(data)
     if "get_chunk" in data:
       chunk_number = data["get_chunk"]
-      file_position = (chunk_number-1)*CHUNK_SIZE
+      file_position = (chunk_number)*CHUNK_SIZE
       f.seek(file_position)
       chunk = f.read(CHUNK_SIZE)
       data = { "chunk_no": chunk_number,
