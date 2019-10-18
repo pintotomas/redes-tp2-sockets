@@ -7,7 +7,11 @@ UPLOAD = 1
 CHUNK_SIZE = 2048 #32 bytes para otras cosas #6 bytes para el numero de chunk
 
 def download_file(server_address, name, dst):
-  # TODO: Implementar UDP download_file client
+  try:
+    f = open(dst, 'wb')
+  except FileNotFoundError:
+    print("The destination folder does not exist!")
+    return
   print('UDP: download_file({}, {}, {})'.format(server_address, name, dst))
   # Create socket and connect to server
   sock = socket(AF_INET, SOCK_DGRAM)
@@ -89,9 +93,6 @@ def download_file(server_address, name, dst):
               except timeout:
                 timeouts += 1
 
-            
-
-    f = open(dst, 'wb')
     for actual_chunk_number in range(total_chunks):
         actual_chunk = udp_buffer.get_chunk(actual_chunk_number)
         f.write(actual_chunk)
