@@ -58,7 +58,7 @@ def upload_file(server_address, src, name):
   if data["signal"] != "start":
     print("There was an error on the server")
     return exit(1)
-  return
+
   print("Sending {} bytes in {} chunks from {}".format(size, total_chunks, src))
   #contador para que el server sepa que chunks va recibiendo
   chunk_number = 0
