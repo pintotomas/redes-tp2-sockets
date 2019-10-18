@@ -49,14 +49,14 @@ def upload_file(server_address, src, name):
   while not(start_signal_obtained):
     try:
       data, addr = sock.recvfrom(CHUNK_SIZE)
+      data = pickle.loads(data)
       if "signal" in data:
         start_signal_obtained = True
 
     except socket.timeout:
       #Vuelvo a enviar la solicitud del archivo que busco
       sock.sendto(pickle.dumps(file_data), server_address)
-
-  data = pickle.loads(data)
+  
   if data["signal"] != "start":
     print("There was an error on the server")
     return exit(1)
