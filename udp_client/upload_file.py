@@ -79,7 +79,7 @@ def upload_file(server_address, src, name):
   # Recv amount of data received by the server
   timeouts = 0
   while True:
-    if(timeouts > 10):
+    if(timeouts > 25):
       print("No more responses from server, stopping upload.")
       break
     try:

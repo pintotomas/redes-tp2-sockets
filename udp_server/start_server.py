@@ -82,7 +82,7 @@ def start_server(server_address, storage_dir):
 
               while not(received_missing_data):
                 try:
-                  if(timeouts > 10):
+                  if(timeouts > 40):
                     #10 timeouts son 30 segundos (timeout setteado en 3)
                     #despues de eso, suponemos que murio el cliente y reseteamos esto
                     print("Client does not respond, stopping upload..")
