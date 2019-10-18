@@ -83,12 +83,13 @@ def download_file(server_address, name, dst):
                 chunk = data.get("chunk")
                 if chunk_number == actual_chunk_number:
                   udp_buffer.add_chunk(chunk_number, chunk)
+                  bytes_received += len(chunk)
                   received_missing_data = True
 
               except timeout:
                 timeouts += 1
 
-            bytes_received += len(chunk)
+            
 
     f = open(dst, 'wb')
     for actual_chunk_number in range(total_chunks):
