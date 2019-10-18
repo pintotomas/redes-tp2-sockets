@@ -14,6 +14,7 @@ TRANSFER_CHUNK_SIZE = 1980
 DOWNLOAD = 2
 UPLOAD = 1
 
+
 def start_server(server_address, storage_dir):
   #TO DO
   # - Guardar el archivo correctamente
@@ -24,10 +25,12 @@ def start_server(server_address, storage_dir):
   sock = socket(AF_INET, SOCK_DGRAM)
   sock.bind(server_address)
   sock.settimeout(3)
+  CURRENT_WORKING_ADDRESS = None
 
   while True:
     try:
       data, addr = sock.recvfrom(CHUNK_SIZE)
+      CURRENT_WORKING_ADDRESS = addr
       data = pickle.loads(data)
       operation_code = int(data["OP"])
 
@@ -37,11 +40,11 @@ def start_server(server_address, storage_dir):
       continue
     if (operation_code == UPLOAD):
       #ACA CADA VEZ QUE RECIBA DATA, CHEQUEAR QUE EL CODIGO SEA UPLOAD, Y SI NO ES, DESCARTARLO
-      sock.sendto(b'start', addr)
+      signal_data = {"signal": "start"}
+      sock.sendto(pickle.dumps(signal_data), CURRENT_WORKING_ADDRESS)
       size = int(data["size"])
       total_chunks = int(data["total_chunks"])
       name = data["name"]
-      print(name)
       print("Incoming file with size {} with {} chunks from {}".format(size, total_chunks, addr))
 
       filename = "{}/{}".format(storage_dir, name)
@@ -51,6 +54,9 @@ def start_server(server_address, storage_dir):
       while bytes_received < size:
         try:
             data, addr = sock.recvfrom(CHUNK_SIZE)
+            if (addr != CURRENT_WORKING_ADDRESS):
+              continue
+              
             data = pickle.loads(data)
             chunk_number = data.get("chunk_no")
             chunk = data.get("chunk")
@@ -75,8 +81,11 @@ def start_server(server_address, storage_dir):
               while not(received_missing_data):
                 try:
                   data = {"get_chunk": actual_chunk_number}
-                  sock.sendto(pickle.dumps(data), addr)
+                  sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
                   data, addr = sock.recvfrom(CHUNK_SIZE)
+                  if (addr != CURRENT_WORKING_ADDRESS):
+                    addr = CURRENT_WORKING_ADDRESS
+                    continue
                   data = pickle.loads(data)
                   chunk_number = data.get("chunk_no")
                   chunk = data.get("chunk")
@@ -98,9 +107,10 @@ def start_server(server_address, storage_dir):
 
       # Send number of bytes received
       data = {"bytes_received": bytes_received}
-      sock.sendto(pickle.dumps(data), addr)
-
+      sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
+      CURRENT_WORKING_ADDRESS = None
       f.close()
+      
 
     elif (operation_code == DOWNLOAD):
       file_name = data["name"]
@@ -112,7 +122,7 @@ def start_server(server_address, storage_dir):
       else:
         data["signal"] = "file_not_found"
 
-      sock.sendto(pickle.dumps(data), addr)
+      sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
 
       if data["signal"] == "file_not_found":
         continue
@@ -125,7 +135,7 @@ def start_server(server_address, storage_dir):
       data = {"size": size,
              "total_chunks": total_chunks}
 
-      sock.sendto(pickle.dumps(data), addr)
+      sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
 
       chunk_number = 0
 
@@ -135,13 +145,15 @@ def start_server(server_address, storage_dir):
         if not chunk:
           break
         data = { "chunk_no": chunk_number, "chunk": chunk }
-        sock.sendto(pickle.dumps(data), addr)
+        sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
         chunk_number += 1
 
       client_received_file = False
       sock.settimeout(None)
       while not(client_received_file):
         data, addr = sock.recvfrom(CHUNK_SIZE)
+        if (addr != CURRENT_WORKING_ADDRESS):
+          continue
         data = pickle.loads(data)
         if "get_chunk" in data:
           chunk_number = data["get_chunk"]
@@ -151,14 +163,15 @@ def start_server(server_address, storage_dir):
           data = { "chunk_no": chunk_number,
                  "chunk": chunk,
                  "OP": UPLOAD }
-          sock.sendto(pickle.dumps(data), addr)
+          sock.sendto(pickle.dumps(data), CURRENT_WORKING_ADDRESS)
         elif "bytes_received" in data:
           num_bytes = data["bytes_received"]
           print("Client received {} bytes".format(num_bytes))
           client_received_file = True
-
+      CURRENT_WORKING_ADDRESS = None
 
   sock.close()
+  
 
 def save_file(filename, buffer, chunks_quantity):
   return

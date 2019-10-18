@@ -22,24 +22,43 @@ def upload_file(server_address, src, name):
   size = f.tell()
   total_chunks = math.ceil(size/CHUNK_SIZE)
   f.seek(0, os.SEEK_SET)
-  print("Sending {} bytes in {} chunks from {}".format(size, total_chunks, src))
+  
 
   # Create socket and connect to server
-  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  sock.bind(own_address)
 
+  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  binded = False
+  addresses = ["127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.4", "127.0.0.5"]
+  ip = 0
+  port = 8081
+  while not(binded):
+    try:
+      own_address = (addresses[ip], port)
+      sock.bind(own_address)
+      binded = True
+    except OSError:
+      ip += 1
   file_data = {"size": str(size),
               "total_chunks": str(total_chunks),
               "OP": UPLOAD,
               "name": name}
 
   sock.sendto(pickle.dumps(file_data), server_address)
-  signal, addr = sock.recvfrom(CHUNK_SIZE)
+  start_signal_obtained = False
+  sock.settimeout(20)
+  while not(start_signal_obtained):
+    try:
+      data, addr = sock.recvfrom(CHUNK_SIZE)
+      start_signal_obtained = True
+    except socket.timeout:
+      #Vuelvo a enviar la solicitud del archivo que busco
+      sock.sendto(pickle.dumps(file_data), server_address)
 
-  if signal.decode() != "start":
+  data = pickle.loads(data)
+  if data["signal"] != "start":
     print("There was an error on the server")
     return exit(1)
-
+  print("Sending {} bytes in {} chunks from {}".format(size, total_chunks, src))
   #contador para que el server sepa que chunks va recibiendo
   chunk_number = 0
 
